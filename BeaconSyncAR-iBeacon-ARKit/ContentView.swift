@@ -8,10 +8,9 @@ import SwiftUI
 import ARKit
 
 struct ContentView: View {
-    @StateObject private var viewModel = ARViewModel()
-    @State private var roomId: UUID?
-    
-    var worldMappingStatus: ARFrame.WorldMappingStatus {viewModel.worldMappingStatus}
+    @StateObject private var arViewModel = ARViewModel()
+
+    var worldMappingStatus: ARFrame.WorldMappingStatus {arViewModel.worldMappingStatus}
     var worldMappingStatusText: String {
         switch worldMappingStatus {
         case .notAvailable: return "World mapping not available"
@@ -22,11 +21,12 @@ struct ContentView: View {
         }
     }
     
+    var session:ARSession? { arViewModel.sceneView?.session }
+    
     var body: some View {
         ZStack{
-            ARSceneViewController(viewModel: viewModel, roomId: $roomId)
-                .edgesIgnoringSafeArea(.all)
-            Text(worldMappingStatusText)
+            ARViewContainer(arViewModel: arViewModel).ignoresSafeArea(.all)
+            Text(worldMappingStatusText).background(.white)
         }
         
     }
