@@ -8,8 +8,18 @@ import SwiftUI
 import ARKit
 
 struct ContentView: View {
-    @StateObject private var arViewModel = ARViewModel()
-    @StateObject private var roomManager = RoomManager()
+    @StateObject private var arViewModel: ARViewModel = ARViewModel()
+    @StateObject private var roomManager: RoomManager = RoomManager()
+    @StateObject private var arWorldMapManager: ARWorldMapManager
+    
+    init() {
+        let arViewModel = ARViewModel()
+        let roomManager = RoomManager()
+        _arWorldMapManager = StateObject(wrappedValue: ARWorldMapManager(roomManager: roomManager, arViewModel: arViewModel))
+        
+        _arViewModel = StateObject(wrappedValue: arViewModel)
+        _roomManager = StateObject(wrappedValue: roomManager)
+    }
     
     var worldMappingStatus: ARFrame.WorldMappingStatus {arViewModel.worldMappingStatus}
     var worldMappingStatusText: String {
@@ -51,7 +61,9 @@ struct ContentView: View {
             VStack{
                 Spacer()
                 Button(action: {
-                    print("Save")
+                    Task{
+                        try await arWorldMapManager.saveCurrentWorldMapRoom()
+                    }
                 }) {
                     Text("Save")
                         .padding()

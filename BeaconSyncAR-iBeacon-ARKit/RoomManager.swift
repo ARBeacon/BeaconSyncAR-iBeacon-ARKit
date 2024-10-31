@@ -31,7 +31,6 @@ class RoomManager: ObservableObject {
     private var beaconManager: BeaconManager
     private var subscriptions = Set<AnyCancellable>()
     private var beaconRoomMap = [IBeaconData: Room?]()
-    private var lastComputedRoom: Room? = nil // Caching lastComputedRoom for better UX in finding the most common room.
     
     init() {
         self.beaconManager = BeaconManager()
@@ -124,13 +123,15 @@ class RoomManager: ObservableObject {
         // Determine the most common room
         if let mostCommonRoom = roomFrequency.max(by: { $0.value < $1.value }).map({ $0.key }) {
             if roomFrequency.filter({ $0.value == roomFrequency[mostCommonRoom]! }).count > 1,
-               let lastRoom = lastComputedRoom,
+               let lastRoom = currentRoom,
                roomFrequency[lastRoom] == roomFrequency[mostCommonRoom] {
-                currentRoom = lastRoom
+                // Do nothing the previous room is still dominant.
             } else {
-                currentRoom = mostCommonRoom
+                if currentRoom != mostCommonRoom {
+                    // Update only nesesary
+                    currentRoom = mostCommonRoom
+                }
             }
-            lastComputedRoom = currentRoom
         } else {
             currentRoom = nil
         }
