@@ -13,6 +13,8 @@ struct ARWorldMapRoom: Codable, Hashable {
     let room: Room
 }
 
+// TODO: @Published status: Status // to UI display what stage [idle, saving, downloading, applying] of this ARWorldMapManager
+
 class ARWorldMapManager: ObservableObject {
     @Published private(set) var currentARWorldMapRoom: ARWorldMapRoom? // to store the last room so we can save before load a new one
     
