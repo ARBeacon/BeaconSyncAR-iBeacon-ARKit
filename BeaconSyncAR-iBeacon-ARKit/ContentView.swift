@@ -49,12 +49,24 @@ struct ContentView: View {
             ARViewContainer(arViewModel: arViewModel).ignoresSafeArea(.all)
             VStack{
                 VStack{
-                    Text(worldMappingStatusText).background(.white)
+                    Text(worldMappingStatusText)
+                        .font(.footnote)
+                        .foregroundColor(.white)
+                        .padding(8)
+                        .background(.gray)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    
                     if let roomName {
-                        Text("Current Room: \(roomName)").background(.white)
+                        VStack{
+                            Text("Welcome To").font(.caption2)
+                            Text("\(roomName)").bold()
+                        }
+                        .foregroundColor(.white)
+                        .padding(12)
+                        .background(.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                 }
-                .padding()
                 Spacer()
             }
             
@@ -65,7 +77,7 @@ struct ContentView: View {
                         try await arWorldMapManager.saveCurrentWorldMapRoom()
                     }
                 }) {
-                    Text("Save")
+                    Text("Save & Upload")
                         .padding()
                         .background(disableSaveButton ? Color.gray : Color.blue)
                         .foregroundColor(.white)
