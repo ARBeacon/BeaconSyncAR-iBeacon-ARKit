@@ -12,13 +12,25 @@ struct ContentView: View {
     @StateObject private var roomManager: RoomManager = RoomManager()
     @StateObject private var arWorldMapManager: ARWorldMapManager
     
-    init() {
+    @ObservedObject var logger: Logger = Logger.get()
+    
+    init(logger: Logger? = nil) {
         let arViewModel = ARViewModel()
         let roomManager = RoomManager()
         _arWorldMapManager = StateObject(wrappedValue: ARWorldMapManager(roomManager: roomManager, arViewModel: arViewModel))
         
         _arViewModel = StateObject(wrappedValue: arViewModel)
         _roomManager = StateObject(wrappedValue: roomManager)
+        
+        if let logger {
+            logger.addLog(label: "ContentView Initialize", content: "Mocked Logger")
+            _logger = ObservedObject(wrappedValue: logger)
+        }
+        else {
+            let logger = Logger.get()
+            logger.addLog(label: "ContentView Initialize")
+            _logger = ObservedObject(wrappedValue:logger)
+        }
     }
     
     var worldMappingStatus: ARFrame.WorldMappingStatus {arViewModel.worldMappingStatus}
@@ -45,55 +57,71 @@ struct ContentView: View {
     }
     
     var body: some View {
-        ZStack{
-            ARViewContainer(arViewModel: arViewModel).ignoresSafeArea(.all)
-            VStack{
+        NavigationStack {
+            ZStack{
+                ARViewContainer(arViewModel: arViewModel).ignoresSafeArea(.all)
                 VStack{
-                    Text(worldMappingStatusText)
-                        .font(.footnote)
-                        .foregroundColor(.white)
-                        .padding(8)
-                        .background(.gray)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    
-                    if let roomName {
-                        VStack{
-                            Text("Welcome To").font(.caption2)
-                            Text("\(roomName)").bold()
+                    VStack{
+                        Text(worldMappingStatusText)
+                            .font(.footnote)
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(.gray)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        
+                        if let roomName {
+                            VStack{
+                                Text("Welcome To").font(.caption2)
+                                Text("\(roomName)").bold()
+                            }
+                            .foregroundColor(.white)
+                            .padding(12)
+                            .background(.blue)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
-                        .foregroundColor(.white)
-                        .padding(12)
-                        .background(.blue)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
+                    Spacer()
                 }
-                Spacer()
-            }
-            
-            VStack{
-                Spacer()
-                Button(action: {
-                    Task{
-                        try await arWorldMapManager.saveCurrentWorldMapRoom()
-                    }
-                }) {
-                    Text("Save & Upload")
+                
+                VStack{
+                    Spacer()
+                    HStack{
+                        Button(action: {
+                            Task{
+                                try await arWorldMapManager.saveCurrentWorldMapRoom()
+                            }
+                        }) {
+                            Text("Save & Upload")
+                                .padding()
+                                .background(disableSaveButton ? Color.gray : Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                                .opacity(disableSaveButton ? 0.6 : 1.0)
+                        }
+                        .disabled(disableSaveButton)
+                        .animation(.easeInOut, value: disableSaveButton)
                         .padding()
-                        .background(disableSaveButton ? Color.gray : Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                        .opacity(disableSaveButton ? 0.6 : 1.0)
+                        
+                        NavigationLink(destination: LogView(logger: logger)) {
+                            Text("Open Log").padding()
+                                .background(Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                                .opacity(1)
+                        }.navigationBarTitleDisplayMode(.automatic)
+                    }
+                    
                 }
-                .disabled(disableSaveButton)
-                .animation(.easeInOut, value: disableSaveButton)
-                .padding()
+                
             }
-            
         }
-        
     }
 }
 
-#Preview {
-    ContentView()
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        let logger = Logger.sampleLogger()
+        return ContentView(logger: logger)
+    }
 }

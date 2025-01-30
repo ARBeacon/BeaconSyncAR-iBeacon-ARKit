@@ -23,9 +23,11 @@ class ARWorldMapManager: ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
     
     init(roomManager: RoomManager, arViewModel: ARViewModel) {
+        Logger.addLog(label: "Initialize ARWorldMapManager")
         self.roomManager = roomManager
         self.arViewModel = arViewModel
         setupBindings()
+        Logger.addLog(label: "Fininshed Initialize ARWorldMapManager")
     }
     
     private func setupBindings() {
@@ -64,7 +66,14 @@ class ARWorldMapManager: ObservableObject {
 extension ARWorldMapManager{
     public func saveCurrentWorldMapRoom() async throws {
         if let currentWorldMapRoom = currentARWorldMapRoom {
-            let newUUID = try await uploadCurrentWorldMap(prev_uuid: currentWorldMapRoom.uuid, for: currentWorldMapRoom.room)
+            
+            Logger.addLog(label: "Uploading WorldMap Request", content: currentARWorldMapRoom)
+            
+            let newUUID = try await uploadCurrentWorldMap(
+                prev_uuid: currentWorldMapRoom.uuid,
+                for: currentWorldMapRoom.room
+            )
+            
             DispatchQueue.main.async {
                 self.currentARWorldMapRoom?.uuid = newUUID
             }
@@ -91,13 +100,34 @@ extension ARWorldMapManager{
     }
     
     private func uploadCurrentWorldMap(prev_uuid: UUID?, for room: Room) async throws -> UUID {
+        
+        Logger.addLog(label: "Retrieving WorldMap from local ARSession", content: room)
         guard let worldMap = try await getCurrentWorldMap() else {
-            throw NSError(domain: "ARWorldMapError", code: 0, userInfo: [NSLocalizedDescriptionKey: "No ARWorldMap in archive."])
+            throw NSError(
+                domain: "ARWorldMapError",
+                code: 0,
+                userInfo: [NSLocalizedDescriptionKey: "No ARWorldMap in archive."]
+            )
         }
+        Logger.addLog(label: "Finished Retrieving WorldMap", content: room)
+        
         let worldMapData = try NSKeyedArchiver.archivedData(withRootObject: worldMap, requiringSecureCoding: true)
+        
+        struct ArchiveWorldMapLog: Encodable {
+            let room: Room
+            let worldMapDataSize: Int
+        }
+        Logger.addLog(
+            label: "Archived WorldMap",
+            content: ArchiveWorldMapLog(room: room, worldMapDataSize: worldMapData.count)
+        )
+        
         let dataBase64Encoded = worldMapData.base64EncodedString()
         
-        let body = UploadARWorldMapParams(dataBase64Encoded: dataBase64Encoded, prev_uuid: prev_uuid)
+        let body = UploadARWorldMapParams(
+            dataBase64Encoded: dataBase64Encoded,
+            prev_uuid: prev_uuid
+        )
         
         let urlString = "https://api.fyp.maitree.dev/room/\(room.id.uuidString)/ARWorldMap/upload"
         guard let url = URL(string: urlString) else {
@@ -110,12 +140,34 @@ extension ARWorldMapManager{
         request.httpBody = try? JSONEncoder().encode(body)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        struct UploadWorldMapLog: Encodable {
+            let room: Room
+            let prev_uuid: UUID?
+        }
+        Logger.addLog(
+            label: "Uploading WorldMap",
+            content: UploadWorldMapLog(
+                room: room,
+                prev_uuid: prev_uuid
+            )
+        )
         print("Uploading worldMapData: \(worldMapData)")
         let (data, response) = try await URLSession.shared.data(for: request)
         print("Done Uploading worldMapData")
+        Logger.addLog(
+            label: "Finished Uploading WorldMap",
+            content: UploadWorldMapLog(
+                room: room,
+                prev_uuid: prev_uuid
+            )
+        )
         
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw NSError(domain: "NetworkError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Upload failed"])
+            throw NSError(
+                domain: "NetworkError",
+                code: 0,
+                userInfo: [NSLocalizedDescriptionKey: "Upload failed"]
+            )
         }
         
         let uploadRespond = try JSONDecoder().decode(UploadARWorldMapResponse.self, from: data)
@@ -134,9 +186,11 @@ extension ARWorldMapManager{
             throw URLError(.badURL)
         }
         
+        Logger.addLog(label: "Downloading WorldMap", content: room)
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         let (data, response) = try await URLSession.shared.data(from: url)
+        Logger.addLog(label: "Finished Downloading WorldMap", content: room)
         
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.badServerResponse)
@@ -148,12 +202,26 @@ extension ARWorldMapManager{
         }
         let downloadRespond = try JSONDecoder().decode(DownloadRespond.self, from: data)
         guard let ARWorldMapData = Data(base64Encoded: downloadRespond.dataBase64Encoded) else{
-            throw NSError(domain: "DataDecodeError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to decode world map data"])
+            throw NSError(
+                domain: "DataDecodeError",
+                code: 0,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to decode world map data"]
+            )
         }
-        guard let worldMap = try NSKeyedUnarchiver.unarchivedObject(ofClass: ARWorldMap.self, from: ARWorldMapData) else{
-            throw NSError(domain: "ARWorldMapError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to get world map data"])
+        
+        guard let worldMap = try NSKeyedUnarchiver.unarchivedObject(
+            ofClass: ARWorldMap.self,
+            from: ARWorldMapData
+        ) else{
+            throw NSError(
+                domain: "ARWorldMapError",
+                code: 0,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to get world map data"]
+            )
         }
+        
         let downloadARWorldMapResponse = DownloadARWorldMapResponse(arWorldMap: worldMap, uuid: downloadRespond.uuid)
+        
         return downloadARWorldMapResponse
     }
 }
@@ -182,8 +250,11 @@ extension ARWorldMapManager {
     }
     
     private func applyARWorldMapData(_ worldMap: ARWorldMap) {
-        let configuration = ARWorldTrackingConfiguration()
+        let configuration = ARViewModel.defaultConfiguration
         configuration.initialWorldMap = worldMap
-        arViewModel.sceneView?.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        arViewModel.sceneView?.session.run(
+            configuration,
+            options: [.resetTracking, .removeExistingAnchors]
+        )
     }
 }
