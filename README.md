@@ -8,6 +8,7 @@ iOS app for BLE-assisted AR synchronization using Apple ARKit's ARWorldMap.
 - Xcode 16+
 - iOS device with ARKit support
 - BLE Beacons (see [BeaconScanner](https://github.com/ARBeacon/BeaconScanner) for setup)
+- Running [backend](https://github.com/ARBeacon/BeaconSyncAR-api)
 
 ### Local Setup
 
