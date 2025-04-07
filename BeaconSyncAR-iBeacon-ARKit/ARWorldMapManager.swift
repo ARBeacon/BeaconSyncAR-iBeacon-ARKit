@@ -129,7 +129,7 @@ extension ARWorldMapManager{
             prev_uuid: prev_uuid
         )
         
-        let urlString = "https://api.fyp.maitree.dev/room/\(room.id.uuidString)/ARWorldMap/upload"
+        let urlString = "\(API_ENDPOINT)/room/\(room.id.uuidString)/ARWorldMap/upload"
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
         }
@@ -181,7 +181,7 @@ extension ARWorldMapManager{
     
     private func downloadARWorldMap(for room: Room) async throws -> DownloadARWorldMapResponse {
         
-        let urlString = "https://api.fyp.maitree.dev/room/\(room.id.uuidString)/ARWorldMap"
+        let urlString = "\(API_ENDPOINT)/room/\(room.id.uuidString)/ARWorldMap"
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
         }
