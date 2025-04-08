@@ -2,6 +2,8 @@
 
 iOS app for BLE-assisted AR synchronization using Apple ARKit's ARWorldMap.
 
+![ScreenRecording_03-22-2025 14-27-37_1](https://github.com/user-attachments/assets/3cd3fe7e-235f-4dc1-b7f6-e30f26ed6000)
+
 ## 🚀 Quick Start
 
 ### Prerequisites
